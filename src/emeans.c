@@ -22,6 +22,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <confuse.h>
+#include <unistd.h>
+#include <string.h>
+#include <math.h>
+#include "utility.h"
 
 // Define process 0 as MASTER
 #define MASTER 0
@@ -32,9 +36,12 @@ int DEBUG, VERBOSE, SLAVE;
 int64_t k_min = 2,
         k_max = 50,
         trials = 50,
-        max_iter = 10000;
+        size = 50;
 double  mutation = 0.01,
         crossover = 0.70;
+int64_t max_iter = 10000,
+        data_rows = 0,
+        data_cols = 0;
 char    *data_file = NULL,
         *results_file = NULL;
 
@@ -43,10 +50,12 @@ cfg_opt_t opts[] = {
     CFG_SIMPLE_INT("k_min", &k_min),
     CFG_SIMPLE_INT("k_max", &k_max),
     CFG_SIMPLE_INT("trials", &trials),
-    CFG_SIMPLE_INT("max_iter", &max_iter),
+    CFG_SIMPLE_INT("size", &size),
     CFG_SIMPLE_FLOAT("mutation", &mutation),
     CFG_SIMPLE_FLOAT("crossover", &crossover),
     CFG_SIMPLE_INT("max_iter", &max_iter),
+    CFG_SIMPLE_INT("data_rows", &data_rows),
+    CFG_SIMPLE_INT("data_cols", &data_cols),
     CFG_SIMPLE_STR("data_file", &data_file),
     CFG_SIMPLE_STR("results_file", &results_file),
     CFG_END()
@@ -57,13 +66,13 @@ cfg_t *cfg;
 int main(int argc, char *argv[])
 {
     int status = SUCCESS;
-    char conf_file[100] = "./conf/ga.conf";
+    char conf_file[100] = "./conf/emeans.conf";
 
     if (argc < 3 || argc > 4)
     {
         fprintf(stderr, RED "[ MASTER ]  Incorrect parameters!\n" RESET);
         fprintf(stderr, RED "[ MASTER ]  Correct usage:\n" RESET);
-        fprintf(stderr, RED "[ MASTER ]  %s <DEBUG> (1=DEBUG 0=NODEBUG) <VERBOSE> (1=YES 0=NO) <CONFIG> (DEFAULT emeans.conf)\n\n" RESET, argv[0]);
+        fprintf(stderr, RED "[ MASTER ]  %s <DEBUG> (1..N=DEBUG 0=NODEBUG) <VERBOSE> (1=YES 0=NO) <CONFIG> (DEFAULT ./conf/emeans.conf)\n\n" RESET, argv[0]);
         status = ERROR;
         goto free;
     }
@@ -72,8 +81,7 @@ int main(int argc, char *argv[])
 
     if (argc > 3)
     {
-        strcpy(conf_file, "./conf/");
-        strcat(conf_file, argv[3]);
+        strcpy(conf_file, argv[3]);
     }
 
     if (access(conf_file, F_OK) != -1)
@@ -87,6 +95,27 @@ int main(int argc, char *argv[])
         status = ERROR;
         goto free;
     }
+
+    if (DEBUG == DEBUG_CONFIG)
+    {
+        printf(YELLOW "[ MASTER ]  DISPLAY CONTENTS OF CONFIG FILE" RESET);
+        printf(YELLOW "\n============================================================\n" RESET);
+        printf(YELLOW "= CONFIG FILE PARAMS\n" RESET);
+        printf(YELLOW "============================================================\n" RESET);
+        printf(YELLOW "   MIN CLUSTERS: %10ld\n" RESET, k_min);
+        printf(YELLOW "   MAX CLUSTERS: %10ld\n" RESET, k_max);
+        printf(YELLOW "CENTROID TRIALS: %10ld\n" RESET, trials);
+        printf(YELLOW "POPULATION SIZE: %10ld\n" RESET, size);
+        printf(YELLOW "  MUTATION RATE: %10.6f\n" RESET, mutation);
+        printf(YELLOW " CROSSOVER RATE: %10.6f\n" RESET, crossover);
+        printf(YELLOW " MAX ITERATIONS: %10ld\n" RESET, max_iter);
+        printf(YELLOW "      DATA ROWS: %10ld\n" RESET, data_rows);
+        printf(YELLOW "      DATA COLS: %10ld\n" RESET, data_cols);
+        printf(YELLOW "      DATA FILE: %s\n" RESET, data_file);
+        printf(YELLOW "   RESULTS FILE: %s\n" RESET, results_file);
+        goto free;
+    }
+
 
 // Free memory and exit
 free:
