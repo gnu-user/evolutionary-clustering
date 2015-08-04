@@ -31,10 +31,10 @@ int load_data(char *input, gsl_matrix *data)
     double val = 0;
     FILE *ifp;
 
-    printf(GREEN "[ MASTER ]  Loading: %s\n" RESET, input);
+    printf(CYAN "[SLAVE %2d]  Loading: %s\n" RESET, SLAVE, input);
     if ((ifp = fopen(input, "r")) == NULL) 
     {
-        fprintf(stderr, RED "[ MASTER ]  Can't open input file %s!\n" RESET, input);
+        fprintf(stderr, RED "[SLAVE %2d]  Can't open input file %s!\n" RESET, SLAVE, input);
         return ERROR;
     }
 
@@ -51,7 +51,7 @@ int load_data(char *input, gsl_matrix *data)
 
     if (DEBUG == DEBUG_DATA)
     {
-        printf(YELLOW "[ MASTER ]  DATA LOADED\n");
+        printf(YELLOW "[SLAVE %2d]  DATA LOADED\n", SLAVE);
         for (uint32_t i = 0; i < rows; ++i) 
         {
             for (uint32_t j = 0; j < cols; ++j)
