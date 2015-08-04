@@ -2,12 +2,12 @@ MPICC = mpicc
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c99
 LFLAGS = 
-LIBS = -lm -lconfuse
+LIBS = -lgsl -lgslcblas -lm -lconfuse
 INC_DIR = include/
 SRC_DIR = src/
 INCLUDES = $(addprefix -I,$(INC_DIR))
 INCLUDES += $(addprefix -I,$(SRC_DIR))
-SOURCES = emeans.c
+SOURCES = emeans.c io.c
 OBJECTS = $(subst .c,.o,$(SOURCES))
 EXE = emeans.exe
 .PHONY: clean help
@@ -20,8 +20,8 @@ debug: $(EXE)
 release: CFLAGS += -O2 -march=native
 release: $(EXE) cleanup
 
-emeans.exe : emeans.o
-	$(MPICC) $(INCLUDES) $(CFLAGS) $^ $(LIBS) -o $@ 
+emeans.exe : emeans.o io.o
+	$(CC) $(INCLUDES) $(CFLAGS) $^ $(LIBS) -o $@ 
 
 %.o : $(SRC_DIR)%.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c $< 
