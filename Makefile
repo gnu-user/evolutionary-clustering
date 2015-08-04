@@ -21,7 +21,7 @@ release: CFLAGS += -O2 -march=native
 release: $(EXE) cleanup
 
 emeans.exe : emeans.o io.o
-	$(CC) $(INCLUDES) $(CFLAGS) $^ $(LIBS) -o $@ 
+	$(MPICC) $(INCLUDES) $(CFLAGS) $^ $(LIBS) -o $@ 
 
 %.o : $(SRC_DIR)%.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c $< 
