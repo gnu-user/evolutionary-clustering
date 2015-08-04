@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <math.h>
+#include <mpi.h>
 #include <confuse.h>
 #include <unistd.h>
 #include <gsl/gsl_matrix.h>
@@ -69,11 +70,70 @@ cfg_opt_t opts[] = {
 cfg_t *cfg;
 
 
-int main(int argc, char *argv[])
+/**
+ * The master, initializes the genetic algorithm, performs GA operators.
+ * 
+ * @param nproc Number of MPI processes
+ *
+ * @return      Status code, 0 for SUCCESS, 1 for ERROR
+ */
+int master(int nproc)
+{
+    int status = SUCCESS;
+    MPI_Status mpi_status;
+
+    sleep(5);
+    return status;
+}
+
+
+/**
+ * The slave, performs Lloyds clustering algorith, computes the fitness,
+ * and returns results to master.
+ * 
+ * @param proc_id Process ID of the slave, used as an identifier
+ *
+ * @return        Status code, 0 for SUCCESS, 1 for ERROR
+ */
+int slave(int proc_id)
 {
     gsl_matrix *data = NULL;
+    // Set global SLAVE identifier
+    SLAVE = proc_id;
+    int status = SUCCESS;
+    MPI_Status mpi_status;
+
+    // Load the data
+    if ((data = gsl_matrix_alloc(data_rows, data_cols)) == NULL)
+    {
+        fprintf(stderr, RED "[ MASTER ]  Error allocating data matrix!" RESET);
+        status = ERROR;
+        goto free;
+    }
+    if ((status = load_data(data_file, data)) != SUCCESS)
+    {   
+        fprintf(stderr, RED "[ MASTER ]  Unable to load data!\n" RESET);
+        status = ERROR;
+        goto free;
+    }
+
+free:
+    gsl_matrix_free(data);
+    return status;
+}
+
+
+int main(int argc, char *argv[])
+{
+    int proc_id;      // Process ID number
+    int n_proc;       // Number of processes
     int status = SUCCESS;
     char conf_file[100] = "./conf/emeans.conf";
+
+    // Initialize MPI
+    MPI_Init(&argc, &argv);
+    MPI_Comm_size(MPI_COMM_WORLD, &n_proc);
+    MPI_Comm_rank(MPI_COMM_WORLD, &proc_id);
 
     if (argc < 3 || argc > 4)
     {
@@ -125,18 +185,13 @@ int main(int argc, char *argv[])
         goto free;
     }
 
-    // Load the data
-    if ((data = gsl_matrix_alloc(data_rows, data_cols)) == NULL)
+    if (proc_id == MASTER)
     {
-        fprintf(stderr, RED "[ MASTER ]  Error allocating data matrix!" RESET);
-        status = ERROR;
-        goto free;
+        status = master(n_proc);
     }
-    if ((status = load_data(data_file, data)) != SUCCESS)
-    {   
-        fprintf(stderr, RED "[ MASTER ]  Unable to load data!\n" RESET);
-        status = ERROR;
-        goto free;
+    else
+    {
+        status = slave(proc_id);
     }
 
 // Free memory and exit
@@ -147,5 +202,13 @@ free:
     free(fitness_file);
     free(cluster_file);
     
+    if (status == SUCCESS)
+    {
+        MPI_Finalize();
+    }
+    else
+    {
+        MPI_Abort(MPI_COMM_WORLD, status);
+    }
     exit(status);
 }
