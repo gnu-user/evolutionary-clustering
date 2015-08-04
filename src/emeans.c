@@ -21,11 +21,13 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <confuse.h>
-#include <unistd.h>
 #include <string.h>
 #include <math.h>
+#include <confuse.h>
+#include <unistd.h>
+#include <gsl/gsl_matrix.h>
 #include "utility.h"
+#include "io.h"
 
 // Define process 0 as MASTER
 #define MASTER 0
@@ -43,7 +45,9 @@ int64_t max_iter = 10000,
         data_rows = 0,
         data_cols = 0;
 char    *data_file = NULL,
-        *results_file = NULL;
+        *chrom_file = NULL,
+        *fitness_file = NULL,
+        *cluster_file = NULL;
 
 // The configuration file parsing mappings
 cfg_opt_t opts[] = {
@@ -57,7 +61,9 @@ cfg_opt_t opts[] = {
     CFG_SIMPLE_INT("data_rows", &data_rows),
     CFG_SIMPLE_INT("data_cols", &data_cols),
     CFG_SIMPLE_STR("data_file", &data_file),
-    CFG_SIMPLE_STR("results_file", &results_file),
+    CFG_SIMPLE_STR("chrom_file", &chrom_file),
+    CFG_SIMPLE_STR("fitness_file", &fitness_file),
+    CFG_SIMPLE_STR("cluster_file", &cluster_file),
     CFG_END()
 };
 cfg_t *cfg;
@@ -65,6 +71,7 @@ cfg_t *cfg;
 
 int main(int argc, char *argv[])
 {
+    gsl_matrix *data = NULL;
     int status = SUCCESS;
     char conf_file[100] = "./conf/emeans.conf";
 
@@ -112,16 +119,33 @@ int main(int argc, char *argv[])
         printf(YELLOW "      DATA ROWS: %10ld\n" RESET, data_rows);
         printf(YELLOW "      DATA COLS: %10ld\n" RESET, data_cols);
         printf(YELLOW "      DATA FILE: %s\n" RESET, data_file);
-        printf(YELLOW "   RESULTS FILE: %s\n" RESET, results_file);
+        printf(YELLOW "CHROMOSOME FILE: %s\n" RESET, chrom_file);
+        printf(YELLOW "   FITNESS FILE: %s\n" RESET, fitness_file);
+        printf(YELLOW "   CLUSTER FILE: %s\n" RESET, cluster_file);
         goto free;
     }
 
+    // Load the data
+    if ((data = gsl_matrix_alloc(data_rows, data_cols)) == NULL)
+    {
+        fprintf(stderr, RED "[ MASTER ]  Error allocating data matrix!" RESET);
+        status = ERROR;
+        goto free;
+    }
+    if ((status = load_data(data_file, data)) != SUCCESS)
+    {   
+        fprintf(stderr, RED "[ MASTER ]  Unable to load data!\n" RESET);
+        status = ERROR;
+        goto free;
+    }
 
 // Free memory and exit
 free:
     cfg_free(cfg);
     free(data_file);
-    free(results_file);
+    free(chrom_file);
+    free(fitness_file);
+    free(cluster_file);
     
     exit(status);
 }
