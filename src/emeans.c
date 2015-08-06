@@ -23,12 +23,15 @@
 #include <stdbool.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 #include <mpi.h>
 #include <confuse.h>
 #include <unistd.h>
 #include <gsl/gsl_matrix.h>
 #include "utility.h"
+#include "pcg_basic.h"
 #include "io.h"
+#include "cluster.h"
 
 // Define process 0 as MASTER
 #define MASTER 0
@@ -103,6 +106,11 @@ int slave(int proc_id)
     int status = SUCCESS;
     MPI_Status mpi_status;
 
+    // Initialize the PRNG
+    pcg32_random_t rng;
+    int rounds = 5;
+    pcg32_srandom_r(&rng, time(NULL) ^ (intptr_t)&printf, (intptr_t)&rounds);
+
     // Load the data
     if ((data = gsl_matrix_alloc(data_rows, data_cols)) == NULL)
     {
@@ -116,6 +124,10 @@ int slave(int proc_id)
         status = ERROR;
         goto free;
     }
+
+    gsl_matrix *cluster = gsl_matrix_alloc(3, data_cols);
+    // Perform the first GA step, optimizing
+    lloyd_random(trials, data, cluster, &rng);
 
 free:
     gsl_matrix_free(data);

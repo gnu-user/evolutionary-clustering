@@ -7,7 +7,7 @@ INC_DIR = include/
 SRC_DIR = src/
 INCLUDES = $(addprefix -I,$(INC_DIR))
 INCLUDES += $(addprefix -I,$(SRC_DIR))
-SOURCES = emeans.c io.c
+SOURCES = emeans.c io.c pcg_basic.c
 OBJECTS = $(subst .c,.o,$(SOURCES))
 EXE = emeans.exe
 .PHONY: clean help
@@ -20,7 +20,7 @@ debug: $(EXE)
 release: CFLAGS += -O2 -march=native
 release: $(EXE) cleanup
 
-emeans.exe : emeans.o io.o
+emeans.exe : emeans.o pcg_basic.o io.o cluster.o
 	$(MPICC) $(INCLUDES) $(CFLAGS) $^ $(LIBS) -o $@ 
 
 %.o : $(SRC_DIR)%.c
