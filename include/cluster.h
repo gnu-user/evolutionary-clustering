@@ -26,15 +26,16 @@
 /**
  * Performs Lloyd's algorithm using random initial centroids.
  *
- * @param trials  Number of trials to perform
- * @param data    Pointer to matrix containing the data
- * @param cluster Pointer to matrix to be populated with cluster 
- * @param rng     Pointer to the random number generator
+ * @param trials     Number of trials to perform
+ * @param data       Pointer to matrix containing the data
+ * @param n_clusters The number of clusters
+ * @param cluster    Pointer to vector containing cluster assignment
+ * @param rng        Pointer to the random number generator
  * 
  * @return      The status code, 0 for SUCCESS, 1 for ERROR
  */
-extern int lloyd_random(int trials, gsl_matrix *data, gsl_matrix *cluster, 
-                        pcg32_random_t *rng);
+extern int lloyd_random(int trials, gsl_matrix *data, int n_clusters,
+                        gsl_vector *cluster, pcg32_random_t *rng);
 
 
 /**
@@ -43,12 +44,12 @@ extern int lloyd_random(int trials, gsl_matrix *data, gsl_matrix *cluster,
  * @param trials    Number of trials to perform
  * @param centroids Pointer to matrix containing the centroids
  * @param data      Pointer to matrix containing the data
- * @param cluster   Pointer to matrix to be populated with cluster 
+ * @param cluster   Pointer to vector containing cluster assignment
  * 
  * @return      The status code, 0 for SUCCESS, 1 for ERROR
  */
 extern int lloyd_defined(int trials, gsl_matrix *centroids, gsl_matrix *data, 
-                         gsl_matrix *cluster);
+                         gsl_vector *cluster);
 
 
 #endif /* CLUSTER_H_ */

@@ -125,9 +125,9 @@ int slave(int proc_id)
         goto free;
     }
 
-    gsl_matrix *cluster = gsl_matrix_alloc(3, data_cols);
+    gsl_vector *cluster = gsl_vector_alloc(data_rows);
     // Perform the first GA step, optimizing
-    lloyd_random(trials, data, cluster, &rng);
+    lloyd_random(trials, data, 3, cluster, &rng);
 
 free:
     gsl_matrix_free(data);
