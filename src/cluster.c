@@ -19,6 +19,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <float.h>
 #include <string.h>
 #include <gsl/gsl_matrix.h>
@@ -118,6 +119,35 @@ int lloyd_random(int trials, gsl_matrix *data, int n_clusters,
                     printf(YELLOW "%d " RESET, (int)gsl_matrix_get(clust_stats, i, j));
             }
             printf("\n");
+        }
+    }
+
+    // TODO Assign the final clusters based on the stats from the trials
+    /*memset(counts, 0, n_clusters * sizeof(int));
+    for (int i = 0, k = 0; i < rows; ++i)
+    {
+        gsl_vector_view data_row = gsl_matrix_row(data, i);
+        gsl_vector_view clust_stats_col = gsl_matrix_column(clust_stats, i);
+        k = (int)round(gsl_stats_mean(clust_stats_col.vector.data, 1, trials));
+        gsl_vector_view clust_row = gsl_matrix_row(clusters[k], counts[k]);
+        gsl_vector_memcpy(&clust_row.vector, &data_row.vector);
+        counts[k] += 1;
+    }*/
+
+    if (DEBUG == DEBUG_CLUSTER)
+    {
+        printf(YELLOW "[SLAVE %2d] FINAL CLUSTERING RESULTS\n" RESET, SLAVE);
+        for (int i = 0; i < n_clusters; ++i)
+        {
+            printf(YELLOW "CLUSTER: %d\n" RESET, i);
+            for (uint32_t j = 0; j < counts[i]; ++j)
+            {
+                for (uint32_t k = 0; k < cols; ++k)
+                {
+                    printf(YELLOW "%10.6f " RESET, j, gsl_matrix_get(clusters[i], j, k));
+                }
+                printf("\n");
+            }
         }
     }
 
