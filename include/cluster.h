@@ -29,13 +29,13 @@
  * @param trials     Number of trials to perform
  * @param data       Pointer to matrix containing the data
  * @param n_clusters The number of clusters
- * @param cluster    Pointer to vector containing cluster assignment
+ * @param clusters   Pointer to array of matrices containing data in clusters
  * @param rng        Pointer to the random number generator
  * 
  * @return      The status code, 0 for SUCCESS, 1 for ERROR
  */
 extern int lloyd_random(int trials, gsl_matrix *data, int n_clusters,
-                        gsl_vector *cluster, pcg32_random_t *rng);
+                        gsl_matrix **clusters, pcg32_random_t *rng);
 
 
 /**
@@ -51,5 +51,17 @@ extern int lloyd_random(int trials, gsl_matrix *data, int n_clusters,
 extern int lloyd_defined(int trials, gsl_matrix *centroids, gsl_matrix *data, 
                          gsl_vector *cluster);
 
+
+/**
+ * Calculate the new centroids using the clustering assignment.
+ * 
+ * @param  centroids  Pointer to matrix containing centroids to be updated
+ * @param  data       Point to matrix containing the data
+ * @param  n_clusters The number of clusters
+ * @param  cluster    Pointer to vector containing cluster assignment
+ * @return            The status code, 0 for SUCCESS, 1 for ERROR
+ */
+static int calc_centroids(gsl_matrix *centroids, gsl_matrix *data, int n_clusters, 
+                          int counts[n_clusters], gsl_matrix **clusters);
 
 #endif /* CLUSTER_H_ */
