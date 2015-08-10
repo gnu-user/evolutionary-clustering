@@ -100,7 +100,8 @@ int master(int nproc)
  */
 int slave(int proc_id)
 {
-    gsl_matrix *data = NULL;
+    gsl_matrix *data = NULL,
+               **clusters = NULL;
     // Set global SLAVE identifier
     SLAVE = proc_id;
     int status = SUCCESS;
@@ -125,9 +126,25 @@ int slave(int proc_id)
         goto free;
     }
 
-    gsl_vector *cluster = gsl_vector_alloc(data_rows);
+    if ((clusters = (gsl_matrix **)calloc(3, sizeof(gsl_matrix **))) == NULL)
+    {
+        fprintf(stderr, RED "[ MASTER ]  Error allocating clusters!\n" RESET);
+        status = ERROR;
+        goto free;
+    }
+    for (int i = 0; i < 3; ++i)
+    {
+        if ((clusters[i] = (gsl_matrix *)gsl_matrix_alloc(data_rows, data_cols)) == NULL)
+        {
+            fprintf(stderr, RED "[ MASTER ]  Error allocating clusters!\n" RESET);
+            status = ERROR;
+            goto free;
+        }
+        gsl_matrix_set_zero(clusters[i]);
+    }
+
     // Perform the first GA step, optimizing
-    lloyd_random(trials, data, 3, cluster, &rng);
+    lloyd_random(trials, data, 3, clusters, &rng);
 
 free:
     gsl_matrix_free(data);
