@@ -36,72 +36,90 @@ int lloyd_random(int trials, gsl_matrix *data, int n_clusters,
     int counts[n_clusters];
     memset(counts, 0, n_clusters * sizeof(int));
 
+    gsl_matrix *clust_stats = gsl_matrix_alloc(trials, rows);
     gsl_matrix *centroids = gsl_matrix_alloc(n_clusters, cols);
     gsl_matrix *old_centroids = gsl_matrix_alloc(n_clusters, cols);
     gsl_matrix_set_zero(old_centroids);
     gsl_matrix_set_zero(centroids);
 
-    // Initialize random centroid as a random value from data
-    for (int i = 0, r = 0, r2 = 0; i < n_clusters; ++i)
+    for (int trial = 0; trial < trials; ++trial)
     {
-        r = (int)pcg32_boundedrand_r(rng, (int)rows);
-        r2 = (int)pcg32_boundedrand_r(rng, (int)rows);
-        gsl_vector_view data_row = gsl_matrix_row(data, r);
-        gsl_vector_view cent_row = gsl_matrix_row(centroids, i);
-        gsl_vector_memcpy(&cent_row.vector, &data_row.vector);
-        gsl_vector_view data_row2 = gsl_matrix_row(data, r2);
-        gsl_vector_view cent_row2 = gsl_matrix_row(old_centroids, i);
-        gsl_vector_memcpy(&cent_row2.vector, &data_row2.vector);
+        // Initialize centroids as a random value from data
+        for (int i = 0, r = 0; i < n_clusters; ++i)
+        {
+            r = (int)pcg32_boundedrand_r(rng, (int)rows);
+            gsl_vector_view data_row = gsl_matrix_row(data, r);
+            gsl_vector_view cent_row = gsl_matrix_row(centroids, i);
+            gsl_vector_view cent_row2 = gsl_matrix_row(old_centroids, i);
+            gsl_vector_memcpy(&cent_row.vector, &data_row.vector);
+            gsl_vector_memcpy(&cent_row2.vector, &cent_row.vector);
+        }
+
+        // Execute LLoyd's algorithm until convergance
+        for (int run = 0; run < 10000; ++run)
+        {
+            memset(counts, 0, n_clusters * sizeof(int));
+
+            // Determine the initial clustering assignment for each
+            for (uint32_t i = 0, k = 0; i < rows; ++i)
+            {
+                double min_norm = DBL_MAX, 
+                       norm = DBL_MAX;
+
+                gsl_vector *sub = gsl_vector_alloc(cols);
+                gsl_vector_view data_row = gsl_matrix_row(data, i);
+
+                for (int j = 0; j < n_clusters; ++j)
+                {
+                    gsl_vector_view cent_row = gsl_matrix_row(centroids, j);
+                    gsl_vector_memcpy(sub, &data_row.vector);
+                    gsl_vector_sub(sub, &cent_row.vector);
+                    norm = gsl_blas_dnrm2(sub);
+                    
+                    // Assign to the cluster if norm is less than in all previous clusters
+                    if (norm <= min_norm)
+                    {
+                        min_norm = norm;
+                        k = j;
+                        gsl_matrix_set(clust_stats, trial, i, k);
+                    }
+                }
+
+                // Assign the data to the cluster with the minimum norm
+                gsl_vector_view clust_row = gsl_matrix_row(clusters[k], counts[k]);
+                gsl_vector_memcpy(&clust_row.vector, &data_row.vector);
+                counts[k] += 1;
+                gsl_vector_free(sub);
+            }
+
+            // Calculate the new centroids
+            calc_centroids(centroids, data, n_clusters, counts, clusters);
+
+            // If centroids are the same then clustering has converged
+            if (gsl_matrix_equal(centroids, old_centroids))
+            {
+                printf("CENTROIDS ARE SAME, ALGORITHM HAS CONVERGED!\n");
+                break;
+            }
+            gsl_matrix_memcpy(old_centroids, centroids);
+        }
     }
 
     if (DEBUG == DEBUG_CLUSTER)
     {
-        printf(YELLOW "[SLAVE %2d] RANDOM CENTROIDS\n" RESET, SLAVE);
-        for (int i = 0; i < n_clusters; ++i) 
+        printf(YELLOW "[SLAVE %2d] CLUSTERING TRIALS RESULTS\n" RESET, SLAVE);
+        for (int i = 0; i < trials; ++i)
         {
-            for (uint32_t j = 0; j < cols; ++j)
+            for (uint32_t j = 0; j < rows; ++j)
             {
                 if (j == 0)
-                    printf(YELLOW "cluster[%d] = %10.6f " RESET, i, gsl_matrix_get(centroids, i, j));
+                    printf(YELLOW "trial[%d] = %d " RESET, i, (int)gsl_matrix_get(clust_stats, i, j));
                 else
-                    printf(YELLOW "%10.6f " RESET, gsl_matrix_get(centroids, i, j));
+                    printf(YELLOW "%d " RESET, (int)gsl_matrix_get(clust_stats, i, j));
             }
             printf("\n");
         }
     }
-
-    // Determine the initial clustering assignment for each
-    for (uint32_t i = 0, k = 0; i < rows; ++i)
-    {
-        double min_norm = DBL_MAX, 
-               norm = DBL_MAX;
-
-        gsl_vector *sub = gsl_vector_alloc(cols);
-        gsl_vector_view data_row = gsl_matrix_row(data, i);
-
-        for (int j = 0; j < n_clusters; ++j)
-        {
-            gsl_vector_view cent_row = gsl_matrix_row(centroids, j);
-            gsl_vector_memcpy(sub, &data_row.vector);
-            gsl_vector_sub(sub, &cent_row.vector);
-            norm = gsl_blas_dnrm2(sub);
-            
-            // Assign to the cluster if norm is less than in all previous clusters
-            if (norm <= min_norm)
-            {
-                min_norm = norm;
-                k = j;
-            }
-        }
-
-        // Assign the data to the cluster with the minimum norm
-        gsl_vector_view clust_row = gsl_matrix_row(clusters[k], counts[k]);
-        gsl_vector_memcpy(&clust_row.vector, &data_row.vector);
-        counts[k] += 1;
-    }
-
-    // Calculate the new centroids
-    calc_centroids(centroids, data, n_clusters, counts, clusters);
 
     return SUCCESS;
 }
@@ -116,6 +134,10 @@ static int calc_centroids(gsl_matrix *centroids, gsl_matrix *data, int n_cluster
     // Calculate the centroid for each cluster
     for (int i = 0; i < n_clusters; ++i)
     {
+        // Empty cluster
+        if (counts[i] < 1)
+            continue;
+
         // Get the submatrix containing the clustered values
         gsl_matrix_view clust_mat = gsl_matrix_submatrix(clusters[i], 0, 0, counts[i], cols);
 
@@ -126,21 +148,5 @@ static int calc_centroids(gsl_matrix *centroids, gsl_matrix *data, int n_cluster
         }
     }
 
-    if (DEBUG == DEBUG_CLUSTER)
-    {
-        printf(YELLOW "[SLAVE %2d] NEW CENTROIDS\n" RESET, SLAVE);
-        for (int i = 0; i < n_clusters; ++i) 
-        {
-            for (uint32_t j = 0; j < cols; ++j)
-            {
-                if (j == 0)
-                    printf(YELLOW "cluster[%d] = %10.6f " RESET, i, gsl_matrix_get(centroids, i, j));
-                else
-                    printf(YELLOW "%10.6f " RESET, gsl_matrix_get(centroids, i, j));
-            }
-            printf("\n");
-        }
-    }
-    
     return SUCCESS;
 }
