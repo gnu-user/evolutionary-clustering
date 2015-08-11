@@ -132,16 +132,6 @@ int slave(int proc_id)
         status = ERROR;
         goto free;
     }
-    for (int i = 0; i < 3; ++i)
-    {
-        if ((clusters[i] = (gsl_matrix *)gsl_matrix_alloc(data_rows, data_cols)) == NULL)
-        {
-            fprintf(stderr, RED "[ MASTER ]  Error allocating clusters!\n" RESET);
-            status = ERROR;
-            goto free;
-        }
-        gsl_matrix_set_zero(clusters[i]);
-    }
 
     // Perform the first GA step, optimizing
     lloyd_random(trials, data, 3, clusters, &rng);

@@ -44,12 +44,12 @@ extern int lloyd_random(int trials, gsl_matrix *data, int n_clusters,
  * @param trials    Number of trials to perform
  * @param centroids Pointer to matrix containing the centroids
  * @param data      Pointer to matrix containing the data
- * @param cluster   Pointer to vector containing cluster assignment
+ * @param clusters  Pointer to array of matrices containing data in clusters
  * 
  * @return      The status code, 0 for SUCCESS, 1 for ERROR
  */
 extern int lloyd_defined(int trials, gsl_matrix *centroids, gsl_matrix *data, 
-                         gsl_vector *cluster);
+                         gsl_matrix **clusters);
 
 
 /**
@@ -61,7 +61,7 @@ extern int lloyd_defined(int trials, gsl_matrix *centroids, gsl_matrix *data,
  * @param  cluster    Pointer to vector containing cluster assignment
  * @return            The status code, 0 for SUCCESS, 1 for ERROR
  */
-static int calc_centroids(gsl_matrix *centroids, gsl_matrix *data, int n_clusters, 
-                          int counts[n_clusters], gsl_matrix **clusters);
+int calc_centroids(gsl_matrix *centroids, gsl_matrix *data, int n_clusters, 
+                   gsl_matrix **clusters);
 
 #endif /* CLUSTER_H_ */

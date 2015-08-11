@@ -34,9 +34,10 @@ int lloyd_random(int trials, gsl_matrix *data, int n_clusters,
 {
     uint32_t rows = data->size1,
              cols = data->size2;
-    int counts[n_clusters];
+    uint32_t counts[n_clusters];
     memset(counts, 0, n_clusters * sizeof(int));
 
+    gsl_vector *sub = gsl_vector_alloc(cols);
     gsl_matrix *clust_stats = gsl_matrix_alloc(trials, rows);
     gsl_matrix *centroids = gsl_matrix_alloc(n_clusters, cols);
     gsl_matrix *old_centroids = gsl_matrix_alloc(n_clusters, cols);
@@ -59,15 +60,11 @@ int lloyd_random(int trials, gsl_matrix *data, int n_clusters,
         // Execute LLoyd's algorithm until convergance
         for (int run = 0; run < 10000; ++run)
         {
-            memset(counts, 0, n_clusters * sizeof(int));
-
             // Determine the initial clustering assignment for each
             for (uint32_t i = 0, k = 0; i < rows; ++i)
             {
                 double min_norm = DBL_MAX, 
                        norm = DBL_MAX;
-
-                gsl_vector *sub = gsl_vector_alloc(cols);
                 gsl_vector_view data_row = gsl_matrix_row(data, i);
 
                 for (int j = 0; j < n_clusters; ++j)
@@ -85,24 +82,53 @@ int lloyd_random(int trials, gsl_matrix *data, int n_clusters,
                         gsl_matrix_set(clust_stats, trial, i, k);
                     }
                 }
+                counts[k] += 1;
+            }
 
-                // Assign the data to the cluster with the minimum norm
+            // Assign the data to the cluster with the minimum norm
+            for (int i = 0; i < n_clusters; ++i)
+            {
+                if (counts[i] < 1)
+                {
+                    clusters[i] = NULL;
+                }
+                else
+                {
+                    clusters[i] = gsl_matrix_alloc(counts[i], cols);
+                    gsl_matrix_set_zero(clusters[i]);
+                }
+            }
+            memset(counts, 0, n_clusters * sizeof(int));
+
+            for (uint32_t i = 0, k = 0; i < rows; ++i)
+            {
+                k = gsl_matrix_get(clust_stats, trial, i);
+
+                // Skip clusters that are empty
+                if (clusters[k] == NULL)
+                {
+                    continue;
+                }
+                gsl_vector_view data_row = gsl_matrix_row(data, i);
                 gsl_vector_view clust_row = gsl_matrix_row(clusters[k], counts[k]);
                 gsl_vector_memcpy(&clust_row.vector, &data_row.vector);
                 counts[k] += 1;
-                gsl_vector_free(sub);
             }
 
             // Calculate the new centroids
-            calc_centroids(centroids, data, n_clusters, counts, clusters);
+            calc_centroids(centroids, data, n_clusters, clusters);
 
             // If centroids are the same then clustering has converged
             if (gsl_matrix_equal(centroids, old_centroids))
             {
-                printf("CENTROIDS ARE SAME, ALGORITHM HAS CONVERGED!\n");
                 break;
             }
             gsl_matrix_memcpy(old_centroids, centroids);
+            
+            for (int i = 0; i < n_clusters; ++i)
+            {
+                gsl_matrix_free(clusters[i]);
+            }
         }
     }
 
@@ -144,37 +170,42 @@ int lloyd_random(int trials, gsl_matrix *data, int n_clusters,
             {
                 for (uint32_t k = 0; k < cols; ++k)
                 {
-                    printf(YELLOW "%10.6f " RESET, j, gsl_matrix_get(clusters[i], j, k));
+                    printf(YELLOW "%10.6f " RESET, gsl_matrix_get(clusters[i], j, k));
                 }
                 printf("\n");
             }
         }
     }
 
+    gsl_vector_free(sub);
+
     return SUCCESS;
 }
 
 
-static int calc_centroids(gsl_matrix *centroids, gsl_matrix *data, int n_clusters, 
-                          int counts[n_clusters], gsl_matrix **clusters)
+int calc_centroids(gsl_matrix *centroids, gsl_matrix *data, int n_clusters, 
+                   gsl_matrix **clusters)
 {
-    uint32_t rows = data->size1,
+    uint32_t rows = 0,
              cols = data->size2;
 
     // Calculate the centroid for each cluster
     for (int i = 0; i < n_clusters; ++i)
     {
         // Empty cluster
-        if (counts[i] < 1)
+        if (clusters[i] == NULL)
+        {
             continue;
+        }
+        rows = clusters[i]->size1;
 
         // Get the submatrix containing the clustered values
-        gsl_matrix_view clust_mat = gsl_matrix_submatrix(clusters[i], 0, 0, counts[i], cols);
+        gsl_matrix_view clust_mat = gsl_matrix_submatrix(clusters[i], 0, 0, rows, cols);
 
-        for (int j = 0; j < cols; ++j)
+        for (uint32_t j = 0; j < cols; ++j)
         {
             gsl_vector_view clust_col = gsl_matrix_column(&clust_mat.matrix, j);
-            gsl_matrix_set(centroids, i, j, gsl_stats_mean(clust_col.vector.data, 1, counts[i]));
+            gsl_matrix_set(centroids, i, j, gsl_stats_mean(clust_col.vector.data, 1, rows));
         }
     }
 
