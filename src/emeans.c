@@ -101,6 +101,7 @@ int master(int nproc)
 int slave(int proc_id)
 {
     gsl_matrix *data = NULL,
+               *bounds = NULL,
                **clusters = NULL;
     // Set global SLAVE identifier
     SLAVE = proc_id;
@@ -125,16 +126,24 @@ int slave(int proc_id)
         status = ERROR;
         goto free;
     }
-
     if ((clusters = (gsl_matrix **)calloc(3, sizeof(gsl_matrix **))) == NULL)
     {
         fprintf(stderr, RED "[ MASTER ]  Error allocating clusters!\n" RESET);
         status = ERROR;
         goto free;
     }
+    if ((bounds = gsl_matrix_alloc(data_cols, 2)) == NULL)
+    {
+        fprintf(stderr, RED "[ MASTER ]  Error allocating bounds matrix!" RESET);
+        status = ERROR;
+        goto free;
+    }
 
+    gsl_matrix *centroids = gsl_matrix_alloc(3, data_cols);
+    calc_bounds(data, bounds);
+    random_centroids(centroids, bounds, &rng);
     // Perform the first GA step, optimizing
-    lloyd_random(trials, data, 3, clusters, &rng);
+    //lloyd_random(trials, data, 3, clusters, &rng);
 
 free:
     gsl_matrix_free(data);
