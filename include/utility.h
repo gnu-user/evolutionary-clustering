@@ -41,6 +41,8 @@ typedef enum
     DEBUG_CONFIG        = 1,    /**< Print all the values parsed from the config file */
     DEBUG_DATA          = 2,    /**< Print the contents of the data file */
     DEBUG_CLUSTER       = 3,    /**< Debug the clutering process using lloyd's */
+    DEBUG_BOUNDS        = 4,    /**< Debug the min/max bounds for each dimension */
+    DEBUG_CENTROIDS     = 5,    /**< Debug the randomly generated initial centroids */
     DEBUG_PROBABILITY   = 10,   /**< Debug output for the probability generation */
     DEBUG_SORTED        = 11,   /**< Debug the sorted chromosomes output */
     DEBUG_SIMILARITY    = 12,   /**< Debug the chromosome similarity and mutation rate */
