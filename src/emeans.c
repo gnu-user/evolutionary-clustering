@@ -32,6 +32,8 @@
 #include "pcg_basic.h"
 #include "io.h"
 #include "cluster.h"
+#include "fitness.h"
+
 
 // Define process 0 as MASTER
 #define MASTER 0
@@ -144,6 +146,8 @@ int slave(int proc_id)
     random_centroids(centroids, bounds, &rng);
     // Perform the first GA step, optimizing
     //lloyd_random(trials, data, 3, clusters, &rng);
+    lloyd_defined(trials, centroids, data, 3, clusters);
+    dunn_index(centroids, 3, clusters);
 
 free:
     gsl_matrix_free(data);

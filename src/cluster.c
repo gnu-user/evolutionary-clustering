@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>
+#include <stdint.h>
 #include <string.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_blas.h>
@@ -362,7 +363,6 @@ int random_centroids(gsl_matrix *centroids, gsl_matrix *bounds, pcg32_random_t *
             min = gsl_matrix_get(bounds, j, 0);
             max = gsl_matrix_get(bounds, j, 1);
             r = (ldexp(pcg32_random_r(rng), -32) * (max - min)) + min;
-            printf("R: %10.6f\n", r);
             gsl_matrix_set(centroids, i, j, r);
         }
     }
