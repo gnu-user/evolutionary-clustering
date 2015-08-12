@@ -45,6 +45,7 @@ typedef enum
     DEBUG_CENTROIDS     = 5,    /**< Debug the randomly generated initial centroids */
     DEBUG_DUNN          = 6,    /**< Debug the Dunn Index calculations */
     DEBUG_CROSSOVER     = 7,    /**< Debug the crossover operator */
+    DEBUG_MUTATE        = 8,    /**< Debug the mutation operator */
     DEBUG_PROBABILITY   = 10,   /**< Debug output for the probability generation */
     DEBUG_SORTED        = 11,   /**< Debug the sorted chromosomes output */
     DEBUG_SIMILARITY    = 12,   /**< Debug the chromosome similarity and mutation rate */
