@@ -153,6 +153,8 @@ int slave(int proc_id)
     random_centroids(parent1, bounds, &rng);
     random_centroids(parent2, bounds, &rng);
     crossover(parent1, parent2, &rng);
+    mutate(parent1, bounds, &rng);
+    mutate(parent2, bounds, &rng);
 
 free:
     gsl_matrix_free(data);
