@@ -83,7 +83,7 @@ extern int calc_bounds(gsl_matrix *data, gsl_matrix *bounds);
  *
  * @param  centroids Pointer to matrix containing centroids to be updated
  * @param  bounds    The min/max bounds for each dimensions of the data
- * @param rng        Pointer to the random number generator
+ * @param  rng       Pointer to the random number generator
  *
  * @return           The status code, 0 for SUCCESS, 1 for ERROR
  */
