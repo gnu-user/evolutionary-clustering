@@ -39,7 +39,7 @@ void crossover(gsl_matrix *parent1, gsl_matrix *parent2, pcg32_random_t *rng)
 
     if (DEBUG == DEBUG_CROSSOVER)
     {
-        printf(YELLOW "[SLAVE %2d] CROSSOVER CENTROIDS BEFORE\n" RESET, SLAVE);
+        printf(YELLOW "[ MASTER ]  CROSSOVER CENTROIDS BEFORE\n" RESET);
         printf(YELLOW "CHROMSOME CUT POINT: %d\n", cut);
         printf(YELLOW "PARENT[1]:\n" RESET);
         for (uint32_t i = 0; i < rows; ++i)
@@ -79,7 +79,7 @@ void crossover(gsl_matrix *parent1, gsl_matrix *parent2, pcg32_random_t *rng)
 
     if (DEBUG == DEBUG_CROSSOVER)
     {
-        printf(YELLOW "[SLAVE %2d] CROSSOVER CENTROIDS AFTER\n" RESET, SLAVE);
+        printf(YELLOW "[ MASTER ]  CROSSOVER CENTROIDS AFTER\n" RESET);
         printf(YELLOW "CHROMSOME CUT POINT: %d\n", cut);
         printf(YELLOW "PARENT[1]:\n" RESET);
         for (uint32_t i = 0; i < rows; ++i)
@@ -96,6 +96,41 @@ void crossover(gsl_matrix *parent1, gsl_matrix *parent2, pcg32_random_t *rng)
             for (uint32_t j = 0; j < cols; ++j)
             {
                 printf(YELLOW "%10.6f " RESET, gsl_matrix_get(parent2, i, j));
+            }
+            printf("\n");
+        }
+    }
+}
+
+
+void mutate(gsl_matrix *chromosome, gsl_matrix *bounds, pcg32_random_t *rng)
+{
+    uint32_t rows = chromosome->size1,
+             cols = chromosome->size2,
+             row, 
+             col;
+    double r, min, max;
+
+    // Select a random row and column
+    row = (uint32_t)pcg32_boundedrand_r(rng, rows);
+    col = (uint32_t)pcg32_boundedrand_r(rng, cols);
+
+    // Set to a random value within the bounds
+    min = gsl_matrix_get(bounds, col, 0);
+    max = gsl_matrix_get(bounds, col, 1);
+    r = (ldexp(pcg32_random_r(rng), -32) * (max - min)) + min;
+    gsl_matrix_set(chromosome, row, col, r);
+
+
+    if (DEBUG == DEBUG_MUTATE)
+    {
+        printf(YELLOW "[ MASTER ]  MUTATED CHROMSOME\n" RESET);
+        printf(YELLOW "ROW: %d, COL: %d, VAL: %10.6f\n" RESET, row, col, r);
+        for (uint32_t i = 0; i < rows; ++i)
+        {
+            for (uint32_t j = 0; j < cols; ++j)
+            {
+                printf(YELLOW "%10.6f " RESET, gsl_matrix_get(chromosome, i, j));
             }
             printf("\n");
         }

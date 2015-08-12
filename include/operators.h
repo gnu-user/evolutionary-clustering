@@ -36,7 +36,8 @@ extern void crossover(gsl_matrix *parent1, gsl_matrix *parent2, pcg32_random_t *
 
 
 /**
- * Performs mutation, mutates a value randomly within the min/max bounds of the data.
+ * Performs mutation, selects a random row and column in the chromosome and
+ * mutates it to a random value within the min/max bounds.
  * 
  * @param  chromosome The chromosome
  * @param  bounds     The min/max bounds for each dimensions of the data
