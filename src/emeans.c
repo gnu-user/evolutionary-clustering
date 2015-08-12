@@ -33,6 +33,7 @@
 #include "io.h"
 #include "cluster.h"
 #include "fitness.h"
+#include "operators.h"
 
 
 // Define process 0 as MASTER
@@ -41,12 +42,11 @@
 int DEBUG, VERBOSE, SLAVE;
 
 // Define the configuration parameters
-int64_t k_min = 2,
-        k_max = 50,
-        trials = 50,
-        size = 50;
-double  mutation = 0.01,
-        crossover = 0.70;
+int64_t n_clusters = 3,
+        trials = 1,
+        size = 100;
+double  m_rate = 0.01,
+        c_rate = 0.70;
 int64_t max_iter = 10000,
         data_rows = 0,
         data_cols = 0;
@@ -57,12 +57,11 @@ char    *data_file = NULL,
 
 // The configuration file parsing mappings
 cfg_opt_t opts[] = {
-    CFG_SIMPLE_INT("k_min", &k_min),
-    CFG_SIMPLE_INT("k_max", &k_max),
+    CFG_SIMPLE_INT("n_clusters", &n_clusters),
     CFG_SIMPLE_INT("trials", &trials),
     CFG_SIMPLE_INT("size", &size),
-    CFG_SIMPLE_FLOAT("mutation", &mutation),
-    CFG_SIMPLE_FLOAT("crossover", &crossover),
+    CFG_SIMPLE_FLOAT("m_rate", &m_rate),
+    CFG_SIMPLE_FLOAT("c_rate", &c_rate),
     CFG_SIMPLE_INT("max_iter", &max_iter),
     CFG_SIMPLE_INT("data_rows", &data_rows),
     CFG_SIMPLE_INT("data_cols", &data_cols),
@@ -128,7 +127,7 @@ int slave(int proc_id)
         status = ERROR;
         goto free;
     }
-    if ((clusters = (gsl_matrix **)calloc(3, sizeof(gsl_matrix **))) == NULL)
+    if ((clusters = (gsl_matrix **)calloc(n_clusters, sizeof(gsl_matrix **))) == NULL)
     {
         fprintf(stderr, RED "[ MASTER ]  Error allocating clusters!\n" RESET);
         status = ERROR;
@@ -141,13 +140,19 @@ int slave(int proc_id)
         goto free;
     }
 
-    gsl_matrix *centroids = gsl_matrix_alloc(3, data_cols);
+    gsl_matrix *centroids = gsl_matrix_alloc(n_clusters, data_cols);
     calc_bounds(data, bounds);
     random_centroids(centroids, bounds, &rng);
     // Perform the first GA step, optimizing
     //lloyd_random(trials, data, 3, clusters, &rng);
-    lloyd_defined(trials, centroids, data, 3, clusters);
-    dunn_index(centroids, 3, clusters);
+    lloyd_defined(trials, centroids, data, n_clusters, clusters);
+    dunn_index(centroids, n_clusters, clusters);
+
+    gsl_matrix *parent1 = gsl_matrix_alloc(n_clusters, data_cols),
+               *parent2 = gsl_matrix_alloc(n_clusters, data_cols);
+    random_centroids(parent1, bounds, &rng);
+    random_centroids(parent2, bounds, &rng);
+    crossover(parent1, parent2, &rng);
 
 free:
     gsl_matrix_free(data);
@@ -201,12 +206,11 @@ int main(int argc, char *argv[])
         printf(YELLOW "\n============================================================\n" RESET);
         printf(YELLOW "= CONFIG FILE PARAMS\n" RESET);
         printf(YELLOW "============================================================\n" RESET);
-        printf(YELLOW "   MIN CLUSTERS: %10ld\n" RESET, k_min);
-        printf(YELLOW "   MAX CLUSTERS: %10ld\n" RESET, k_max);
+        printf(YELLOW "   NUM CLUSTERS: %10ld\n" RESET, n_clusters);
         printf(YELLOW "CENTROID TRIALS: %10ld\n" RESET, trials);
         printf(YELLOW "POPULATION SIZE: %10ld\n" RESET, size);
-        printf(YELLOW "  MUTATION RATE: %10.6f\n" RESET, mutation);
-        printf(YELLOW " CROSSOVER RATE: %10.6f\n" RESET, crossover);
+        printf(YELLOW "  MUTATION RATE: %10.6f\n" RESET, m_rate);
+        printf(YELLOW " CROSSOVER RATE: %10.6f\n" RESET, c_rate);
         printf(YELLOW " MAX ITERATIONS: %10ld\n" RESET, max_iter);
         printf(YELLOW "      DATA ROWS: %10ld\n" RESET, data_rows);
         printf(YELLOW "      DATA COLS: %10ld\n" RESET, data_cols);
