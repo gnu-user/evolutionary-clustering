@@ -30,7 +30,7 @@
 #define RESET   "\x1b[0m"
 
 // Declare the globals and CLI flags DEBUG, VERBOSE
-extern int DEBUG, VERBOSE, SLAVE;
+extern int DEBUG, VERBOSE;
 
 /**
  * @enum debug_code

@@ -85,7 +85,7 @@ double dunn_index(gsl_matrix *centroids, int n_clusters, gsl_matrix **clusters)
 
     if (DEBUG == DEBUG_DUNN)
     {
-        printf(YELLOW "[SLAVE %2d] DUNN INDEX CALCULATIONS\n" RESET, SLAVE);
+        printf(YELLOW "DUNN INDEX CALCULATIONS\n" RESET);
         for (int i = 0; i < n_clusters; ++i)
         {
             if (i == 0)

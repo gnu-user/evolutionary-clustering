@@ -135,7 +135,7 @@ int lloyd_random(int trials, gsl_matrix *data, int n_clusters,
 
     if (DEBUG == DEBUG_CLUSTER)
     {
-        printf(YELLOW "[SLAVE %2d] CLUSTERING TRIALS RESULTS\n" RESET, SLAVE);
+        printf(YELLOW "CLUSTERING TRIALS RESULTS\n" RESET);
         for (int i = 0; i < trials; ++i)
         {
             for (uint32_t j = 0; j < rows; ++j)
@@ -163,7 +163,7 @@ int lloyd_random(int trials, gsl_matrix *data, int n_clusters,
 
     if (DEBUG == DEBUG_CLUSTER)
     {
-        printf(YELLOW "[SLAVE %2d] FINAL CLUSTERING RESULTS\n" RESET, SLAVE);
+        printf(YELLOW "FINAL CLUSTERING RESULTS\n" RESET);
         for (int i = 0; i < n_clusters; ++i)
         {
             printf(YELLOW "CLUSTER: %d\n" RESET, i);
@@ -272,7 +272,7 @@ int lloyd_defined(int trials, gsl_matrix *centroids, gsl_matrix *data,
 
     if (DEBUG == DEBUG_CLUSTER)
     {
-        printf(YELLOW "[SLAVE %2d] FINAL CLUSTERING RESULTS\n" RESET, SLAVE);
+        printf(YELLOW "FINAL CLUSTERING RESULTS\n" RESET);
         for (int i = 0; i < n_clusters; ++i)
         {
             printf(YELLOW "CLUSTER: %d\n" RESET, i);
@@ -338,7 +338,7 @@ int calc_bounds(gsl_matrix *data, gsl_matrix *bounds)
 
     if (DEBUG == DEBUG_BOUNDS)
     {
-        printf(YELLOW "[ MASTER ]  MIN/MAX BOUNDS\n" RESET);
+        printf(YELLOW "MIN/MAX BOUNDS\n" RESET);
         for (uint32_t i = 0; i < cols; ++i)
         {
             printf(YELLOW "%10.6f %10.6f\n" RESET, gsl_matrix_get(bounds, i, 0),
@@ -369,7 +369,7 @@ int random_centroids(gsl_matrix *centroids, gsl_matrix *bounds, pcg32_random_t *
 
     if (DEBUG == DEBUG_CENTROIDS)
     {
-        printf(YELLOW "[ MASTER ]  RANDOM CENTROIDS\n" RESET);
+        printf(YELLOW "RANDOM CENTROIDS\n" RESET);
         for (uint32_t i = 0; i < rows; ++i)
         {
             for (uint32_t j = 0; j < cols; ++j)

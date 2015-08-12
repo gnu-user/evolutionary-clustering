@@ -24,7 +24,6 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
-#include <mpi.h>
 #include <confuse.h>
 #include <unistd.h>
 #include <gsl/gsl_matrix.h>
@@ -36,10 +35,7 @@
 #include "operators.h"
 
 
-// Define process 0 as MASTER
-#define MASTER 0
-
-int DEBUG, VERBOSE, SLAVE;
+int DEBUG, VERBOSE;
 
 // Define the configuration parameters
 int64_t n_clusters = 3,
@@ -75,39 +71,17 @@ cfg_t *cfg;
 
 
 /**
- * The master, initializes the genetic algorithm, performs GA operators.
- * 
- * @param nproc Number of MPI processes
- *
- * @return      Status code, 0 for SUCCESS, 1 for ERROR
- */
-int master(int nproc)
-{
-    int status = SUCCESS;
-    MPI_Status mpi_status;
-
-    sleep(5);
-    return status;
-}
-
-
-/**
- * The slave, performs Lloyds clustering algorith, computes the fitness,
- * and returns results to master.
- * 
- * @param proc_id Process ID of the slave, used as an identifier
+ * The E-means algorithm, uses a genetic algorithm to optimize the parameters 
+ * for the K-means implemetation of clustering based Lloyds clustering algorithm.
  *
  * @return        Status code, 0 for SUCCESS, 1 for ERROR
  */
-int slave(int proc_id)
+int emeans(void)
 {
     gsl_matrix *data = NULL,
                *bounds = NULL,
                **clusters = NULL;
-    // Set global SLAVE identifier
-    SLAVE = proc_id;
     int status = SUCCESS;
-    MPI_Status mpi_status;
 
     // Initialize the PRNG
     pcg32_random_t rng;
@@ -117,25 +91,25 @@ int slave(int proc_id)
     // Load the data
     if ((data = gsl_matrix_alloc(data_rows, data_cols)) == NULL)
     {
-        fprintf(stderr, RED "[ MASTER ]  Error allocating data matrix!" RESET);
+        fprintf(stderr, RED "Error allocating data matrix!" RESET);
         status = ERROR;
         goto free;
     }
     if ((status = load_data(data_file, data)) != SUCCESS)
     {   
-        fprintf(stderr, RED "[ MASTER ]  Unable to load data!\n" RESET);
+        fprintf(stderr, RED "Unable to load data!\n" RESET);
         status = ERROR;
         goto free;
     }
     if ((clusters = (gsl_matrix **)calloc(n_clusters, sizeof(gsl_matrix **))) == NULL)
     {
-        fprintf(stderr, RED "[ MASTER ]  Error allocating clusters!\n" RESET);
+        fprintf(stderr, RED "Error allocating clusters!\n" RESET);
         status = ERROR;
         goto free;
     }
     if ((bounds = gsl_matrix_alloc(data_cols, 2)) == NULL)
     {
-        fprintf(stderr, RED "[ MASTER ]  Error allocating bounds matrix!" RESET);
+        fprintf(stderr, RED "Error allocating bounds matrix!" RESET);
         status = ERROR;
         goto free;
     }
@@ -157,28 +131,27 @@ int slave(int proc_id)
     mutate(parent2, bounds, &rng);
 
 free:
+    for (int i = 0; i < n_clusters; ++i)
+    {
+        gsl_matrix_free(clusters[i]);
+    }
+    free(clusters);
     gsl_matrix_free(data);
+    gsl_matrix_free(bounds);
     return status;
 }
 
 
 int main(int argc, char *argv[])
 {
-    int proc_id;      // Process ID number
-    int n_proc;       // Number of processes
     int status = SUCCESS;
     char conf_file[100] = "./conf/emeans.conf";
 
-    // Initialize MPI
-    MPI_Init(&argc, &argv);
-    MPI_Comm_size(MPI_COMM_WORLD, &n_proc);
-    MPI_Comm_rank(MPI_COMM_WORLD, &proc_id);
-
     if (argc < 3 || argc > 4)
     {
-        fprintf(stderr, RED "[ MASTER ]  Incorrect parameters!\n" RESET);
-        fprintf(stderr, RED "[ MASTER ]  Correct usage:\n" RESET);
-        fprintf(stderr, RED "[ MASTER ]  %s <DEBUG> (1..N=DEBUG 0=NODEBUG) <VERBOSE> (1=YES 0=NO) <CONFIG> (DEFAULT ./conf/emeans.conf)\n\n" RESET, argv[0]);
+        fprintf(stderr, RED "Incorrect parameters!\n" RESET);
+        fprintf(stderr, RED "Correct usage:\n" RESET);
+        fprintf(stderr, RED "%s <DEBUG> (1..N=DEBUG 0=NODEBUG) <VERBOSE> (1=YES 0=NO) <CONFIG> (DEFAULT ./conf/emeans.conf)\n\n" RESET, argv[0]);
         status = ERROR;
         goto free;
     }
@@ -197,14 +170,13 @@ int main(int argc, char *argv[])
     }
     else
     {
-        fprintf(stderr, RED "[ MASTER ]  Unable to open file %s\n" RESET, conf_file);
+        fprintf(stderr, RED "Unable to open file %s\n" RESET, conf_file);
         status = ERROR;
         goto free;
     }
 
     if (DEBUG == DEBUG_CONFIG)
     {
-        printf(YELLOW "[ MASTER ]  DISPLAY CONTENTS OF CONFIG FILE" RESET);
         printf(YELLOW "\n============================================================\n" RESET);
         printf(YELLOW "= CONFIG FILE PARAMS\n" RESET);
         printf(YELLOW "============================================================\n" RESET);
@@ -223,14 +195,9 @@ int main(int argc, char *argv[])
         goto free;
     }
 
-    if (proc_id == MASTER)
-    {
-        status = master(n_proc);
-    }
-    else
-    {
-        status = slave(proc_id);
-    }
+
+    // Execute the E-means algorithm
+    status = emeans();
 
 // Free memory and exit
 free:
@@ -239,14 +206,6 @@ free:
     free(chrom_file);
     free(fitness_file);
     free(cluster_file);
-    
-    if (status == SUCCESS)
-    {
-        MPI_Finalize();
-    }
-    else
-    {
-        MPI_Abort(MPI_COMM_WORLD, status);
-    }
+
     exit(status);
 }

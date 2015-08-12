@@ -39,7 +39,7 @@ void crossover(gsl_matrix *parent1, gsl_matrix *parent2, pcg32_random_t *rng)
 
     if (DEBUG == DEBUG_CROSSOVER)
     {
-        printf(YELLOW "[ MASTER ]  CROSSOVER CENTROIDS BEFORE\n" RESET);
+        printf(YELLOW "CROSSOVER CENTROIDS BEFORE\n" RESET);
         printf(YELLOW "CHROMSOME CUT POINT: %d\n", cut);
         printf(YELLOW "PARENT[1]:\n" RESET);
         for (uint32_t i = 0; i < rows; ++i)
@@ -79,7 +79,7 @@ void crossover(gsl_matrix *parent1, gsl_matrix *parent2, pcg32_random_t *rng)
 
     if (DEBUG == DEBUG_CROSSOVER)
     {
-        printf(YELLOW "[ MASTER ]  CROSSOVER CENTROIDS AFTER\n" RESET);
+        printf(YELLOW "CROSSOVER CENTROIDS AFTER\n" RESET);
         printf(YELLOW "CHROMSOME CUT POINT: %d\n", cut);
         printf(YELLOW "PARENT[1]:\n" RESET);
         for (uint32_t i = 0; i < rows; ++i)
@@ -124,7 +124,7 @@ void mutate(gsl_matrix *chromosome, gsl_matrix *bounds, pcg32_random_t *rng)
 
     if (DEBUG == DEBUG_MUTATE)
     {
-        printf(YELLOW "[ MASTER ]  MUTATED CHROMSOME\n" RESET);
+        printf(YELLOW "MUTATED CHROMSOME\n" RESET);
         printf(YELLOW "ROW: %d, COL: %d, VAL: %10.6f\n" RESET, row, col, r);
         for (uint32_t i = 0; i < rows; ++i)
         {
