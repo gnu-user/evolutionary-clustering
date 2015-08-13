@@ -94,6 +94,10 @@ int save_results(char *output, char *output2, char *output3, int size, double fi
     // Save the optimal clustering
     for (int n = 0; n < n_clusters; ++n)
     {
+        // Skip empty clusters
+        if (clusters[max_idx][n] == NULL)
+            continue;
+
         rows = clusters[max_idx][n]->size1;
         cols = clusters[max_idx][n]->size2;
         for (uint32_t i = 0; i < rows; ++i)
@@ -110,6 +114,7 @@ int save_results(char *output, char *output2, char *output3, int size, double fi
     }
     fclose(ofp3);
     
+    printf("MADE IT!");
     return SUCCESS;
 }
 
