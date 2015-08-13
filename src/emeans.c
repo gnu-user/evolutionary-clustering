@@ -33,6 +33,7 @@
 #include "cluster.h"
 #include "fitness.h"
 #include "operators.h"
+#include "selection.h"
 
 
 int DEBUG, VERBOSE;
@@ -47,7 +48,7 @@ int64_t max_iter = 10000,
         data_rows = 0,
         data_cols = 0;
 char    *data_file = NULL,
-        *chrom_file = NULL,
+        *centroids_file = NULL,
         *fitness_file = NULL,
         *cluster_file = NULL;
 
@@ -62,7 +63,7 @@ cfg_opt_t opts[] = {
     CFG_SIMPLE_INT("data_rows", &data_rows),
     CFG_SIMPLE_INT("data_cols", &data_cols),
     CFG_SIMPLE_STR("data_file", &data_file),
-    CFG_SIMPLE_STR("chrom_file", &chrom_file),
+    CFG_SIMPLE_STR("centroids_file", &centroids_file),
     CFG_SIMPLE_STR("fitness_file", &fitness_file),
     CFG_SIMPLE_STR("cluster_file", &cluster_file),
     CFG_END()
@@ -80,20 +81,29 @@ int emeans(void)
 {
     gsl_matrix *data = NULL,
                *bounds = NULL,
-               **clusters = NULL;
+               **population = NULL,
+               **new_population = NULL,
+               ***clusters = NULL;
     int status = SUCCESS;
+    double fitness[size],
+           probability[size];
 
     // Initialize the PRNG
     pcg32_random_t rng;
     int rounds = 5;
     pcg32_srandom_r(&rng, time(NULL) ^ (intptr_t)&printf, (intptr_t)&rounds);
 
-    // Load the data
-    if ((data = gsl_matrix_alloc(data_rows, data_cols)) == NULL)
+    // Allocate memory and load the data
+    data = gsl_matrix_alloc(data_rows, data_cols);
+    bounds = gsl_matrix_alloc(data_cols, 2);
+    population = (gsl_matrix **)calloc(size, sizeof(gsl_matrix **));
+    new_population = (gsl_matrix **)calloc(size, sizeof(gsl_matrix **));
+    clusters = (gsl_matrix ***)calloc(size, sizeof(gsl_matrix ***));
+
+    for (int i = 0; i < (int)size; ++i)
     {
-        fprintf(stderr, RED "Error allocating data matrix!" RESET);
-        status = ERROR;
-        goto free;
+        clusters[i] = (gsl_matrix **)calloc(n_clusters, sizeof(gsl_matrix **));
+        population[i] = gsl_matrix_alloc(n_clusters, data_cols);
     }
     if ((status = load_data(data_file, data)) != SUCCESS)
     {   
@@ -101,24 +111,42 @@ int emeans(void)
         status = ERROR;
         goto free;
     }
-    if ((clusters = (gsl_matrix **)calloc(n_clusters, sizeof(gsl_matrix **))) == NULL)
+
+    // Calculate the bounds of the data
+    calc_bounds(data, bounds);
+
+    // Generate the initial population
+    printf(CYAN "Generating initial population...\n" RESET);
+    for (int i = 0; i < (int)size; ++i)
     {
-        fprintf(stderr, RED "Error allocating clusters!\n" RESET);
-        status = ERROR;
-        goto free;
-    }
-    if ((bounds = gsl_matrix_alloc(data_cols, 2)) == NULL)
-    {
-        fprintf(stderr, RED "Error allocating bounds matrix!" RESET);
-        status = ERROR;
-        goto free;
+        random_centroids(population[i], bounds, &rng);
     }
 
-    gsl_matrix *centroids = gsl_matrix_alloc(n_clusters, data_cols);
-    calc_bounds(data, bounds);
-    random_centroids(centroids, bounds, &rng);
+    // Perform the genetic algorithm
+    for (int iter = 0; iter < max_iter; ++iter)
+    {
+        // Compute the fitness of each chromosome
+        for (int i = 0; i < (int)size; ++i)
+        {
+            lloyd_defined(trials, population[i], data, n_clusters, clusters[i]);
+            fitness[i] = dunn_index(population[i], n_clusters, clusters[i]);
+            if (VERBOSE == 1)
+                printf(CYAN "chromsome[%d], fitness: %10.6f\n" RESET, i, fitness[i]);
+        }
+
+        // Generate the probabilities for roulette wheel selection
+        gen_probability(size, fitness, probability);
+
+        // Save the results if there is a new best solution
+        save_results(fitness_file, centroids_file, cluster_file, size, fitness, 
+                     population, n_clusters, clusters);
+
+
+    }
+    
     // Perform the first GA step, optimizing
     //lloyd_random(trials, data, 3, clusters, &rng);
+    /*
     lloyd_defined(trials, centroids, data, n_clusters, clusters);
     dunn_index(centroids, n_clusters, clusters);
 
@@ -129,13 +157,25 @@ int emeans(void)
     crossover(parent1, parent2, &rng);
     mutate(parent1, bounds, &rng);
     mutate(parent2, bounds, &rng);
+    */
 
 free:
-    for (int i = 0; i < n_clusters; ++i)
+    for (int i = 0; i < (int)size; ++i)
     {
-        gsl_matrix_free(clusters[i]);
+        for (int j = 0; j < n_clusters; ++j)
+        {
+            gsl_matrix_free(clusters[i][j]);
+        }
+        free(clusters[i]);
     }
     free(clusters);
+    for (int i = 0; i < (int)size; ++i)
+    {
+        gsl_matrix_free(population[i]);
+        gsl_matrix_free(new_population[i]);
+    }
+    free(population);
+    free(new_population);
     gsl_matrix_free(data);
     gsl_matrix_free(bounds);
     return status;
@@ -189,7 +229,7 @@ int main(int argc, char *argv[])
         printf(YELLOW "      DATA ROWS: %10ld\n" RESET, data_rows);
         printf(YELLOW "      DATA COLS: %10ld\n" RESET, data_cols);
         printf(YELLOW "      DATA FILE: %s\n" RESET, data_file);
-        printf(YELLOW "CHROMOSOME FILE: %s\n" RESET, chrom_file);
+        printf(YELLOW " CENTROIDS FILE: %s\n" RESET, centroids_file);
         printf(YELLOW "   FITNESS FILE: %s\n" RESET, fitness_file);
         printf(YELLOW "   CLUSTER FILE: %s\n" RESET, cluster_file);
         goto free;
@@ -203,7 +243,7 @@ int main(int argc, char *argv[])
 free:
     cfg_free(cfg);
     free(data_file);
-    free(chrom_file);
+    free(centroids_file);
     free(fitness_file);
     free(cluster_file);
 
