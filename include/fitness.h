@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef CLUSTER_H_
-#define CLUSTER_H_
+#ifndef FITNESS_H_
+#define FITNESS_H_
 
 #include <gsl/gsl_matrix.h>
 
@@ -34,4 +34,4 @@
 extern double dunn_index(gsl_matrix *centroids, int n_clusters, gsl_matrix **clusters);
 
 
-#endif /* CLUSTER_H_ */
+#endif /* FITNESS_H_ */
