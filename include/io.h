@@ -36,28 +36,20 @@ extern int load_data(char *input, gsl_matrix *data);
 
 /**
  * Save the chromosome and fitness value if they are better than previous.
- * 
- * @param output     Path to save the chromosome solution
- * @param output2    Path to save the fitness value
- * @param fitness    Pointer to array of fitness values for the population
- * @param size       Size of the populations
- * @param len        Length, or number of values in each chromosome
- * @param population Population of all chromosomes
  *
+ * @param output     Path to save the optimal fitness value
+ * @param output2    Path to save the optimal fitness centroids
+ * @param output3    Path to save the optimal cluster results
+ * @param size       Size of the populations
+ * @param fitness    Pointer to array of fitness values for the population
+ * @param population Population of all chromosomes
+ * @param n_clusters The number of clusters
+ * @param clusters   The clusters for each chromosome in the population
+ * 
  * @return           The status code, 0 for SUCCESS, 1 for ERROR
  */
-extern int save_results(char *output, char *output2, double *fitness, 
-                        int rows, int cols, int population[rows][cols]);
-
-
-/**
- * Saves the clustering produced by E-means clustering algorithm.
- * 
- * @param  output  Path to save the cluster results
- * @param  cluster GSL matrix containing the clustering
- * @return         The status code, 0 for SUCCESS, 1 for ERROR
- */
-extern int save_cluster(char *output, gsl_matrix *cluster);
+extern int save_results(char *output, char *output2, char *output3, int size, double fitness[size], 
+                        gsl_matrix **population, int n_clusters, gsl_matrix ***clusters);
 
 
 #endif /* IO_H_ */

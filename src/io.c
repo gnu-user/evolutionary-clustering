@@ -20,8 +20,98 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <float.h>
 #include "utility.h"
 #include "io.h"
+
+
+int save_results(char *output, char *output2, char *output3, int size, double fitness[size], 
+                 gsl_matrix **population, int n_clusters, gsl_matrix ***clusters)
+{
+    uint32_t rows = 0,
+             cols = 0;
+    int max_idx = 0;
+    FILE *ofp, *ofp2, *ofp3;
+    double new_fitness = DBL_MIN;
+    // Static record across all function calls of the max fitness
+    static double max_fitness = DBL_MIN;
+
+    // Determine the chromosome with the highest fitness
+    for (int i = 0; i < size; ++i)
+    {
+        if (fitness[i] > max_fitness)
+        {
+            new_fitness = fitness[i];
+            max_idx = i;
+        }
+    }
+    // Only save the results if fitness is same or better
+    if (max_fitness > new_fitness)
+    {
+        return SUCCESS;
+    }
+    max_fitness = new_fitness;
+
+    printf(GREEN "Saving results for new best fitness: %10.6f\n" RESET, max_fitness);
+
+    // Append the solution to the results file
+    if ((ofp = fopen(output, "a")) == NULL) 
+    {
+        fprintf(stderr, RED "Can't open output file %s!\n" RESET, output);
+        return ERROR;
+    }
+    if ((ofp2 = fopen(output2, "w")) == NULL) 
+    {
+        fprintf(stderr, RED "Can't open output file %s!\n" RESET, output2);
+        return ERROR;
+    }
+    if ((ofp3 = fopen(output3, "w")) == NULL) 
+    {
+        fprintf(stderr, RED "Can't open output file %s!\n" RESET, output3);
+        return ERROR;
+    }
+
+    // Save the current optimal fitness
+    fprintf(ofp, "%10.6f\n", max_fitness);
+    fclose(ofp);
+
+    // Save the optimal population centroids
+    rows = population[max_idx]->size1;
+    cols = population[max_idx]->size2;
+    for (uint32_t i = 0; i < rows; ++i)
+    {
+        for (uint32_t j = 0; j < cols; ++j)
+        {
+            if (j == 0)
+                fprintf(ofp2, "%10.6f", gsl_matrix_get(population[max_idx], i, j));
+            else
+                fprintf(ofp2, ",%10.6f", gsl_matrix_get(population[max_idx], i, j));
+        }
+        fprintf(ofp2, "\n");
+    }
+    fclose(ofp2);
+
+    // Save the optimal clustering
+    for (int n = 0; n < n_clusters; ++n)
+    {
+        rows = clusters[max_idx][n]->size1;
+        cols = clusters[max_idx][n]->size2;
+        for (uint32_t i = 0; i < rows; ++i)
+        {
+            for (uint32_t j = 0; j < cols; ++j)
+            {
+                if (j == 0)
+                    fprintf(ofp3, "%10.6f,%10.6f", (double)n, gsl_matrix_get(clusters[max_idx][n], i, j));
+                else
+                    fprintf(ofp3, ",%10.6f", gsl_matrix_get(clusters[max_idx][n], i, j));
+            }
+            fprintf(ofp3, "\n");
+        }
+    }
+    fclose(ofp3);
+    
+    return SUCCESS;
+}
 
 
 int load_data(char *input, gsl_matrix *data)
