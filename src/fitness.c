@@ -43,7 +43,7 @@ double dunn_index(gsl_matrix *centroids, int n_clusters, gsl_matrix **clusters)
     // Calculate the mean distance between all pairs in each cluster
     for (int n = 0; n < n_clusters; ++n)
     {
-        if (clusters[n] == NULL)
+        if (clusters[n] == NULL || clusters[n]->size1 < 2)
         {
             continue;
         }
@@ -80,7 +80,7 @@ double dunn_index(gsl_matrix *centroids, int n_clusters, gsl_matrix **clusters)
         }
     }
 
-    // Calcualte the Dunn Index
+    // Calculate the Dunn Index
     dunn = gsl_vector_min(interclus) / gsl_vector_max(mean_dist);
 
     if (DEBUG == DEBUG_DUNN)
