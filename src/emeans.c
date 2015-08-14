@@ -109,6 +109,7 @@ int emeans(void)
     {
         clusters[i] = (gsl_matrix **)calloc(n_clusters, sizeof(gsl_matrix **));
         population[i] = gsl_matrix_alloc(n_clusters, data_cols);
+        new_population[i] = gsl_matrix_alloc(n_clusters, data_cols);
     }
     if ((status = load_data(data_file, data)) != SUCCESS)
     {   
@@ -151,14 +152,14 @@ int emeans(void)
             printf(CYAN "Executing roulette wheel selection...\n" RESET);
 
         // Select parents from the population and perform genetic operators
-        for (int i = 0;  i < size; i += 2)
+        for (int i = 0; i < size; i += 2)
         {
             // Select parents
             for (int j = 0, idx = 0; j < 2; ++j)
             {
                 idx = select_parent(size, probability, &rng);
                 if (VERBOSE == 1)
-                    printf(CYAN "Parent %d selected as chromsome %d\n" RESET, j, idx);
+                    printf(CYAN "Parent %d selected as chromsome %d from population\n" RESET, j, idx);
 
                 if (j == 0)
                     gsl_matrix_memcpy(parent1, population[idx]);
@@ -167,11 +168,15 @@ int emeans(void)
             }
 
             // Perform crossover and mutation with specified probabilities
+            if (VERBOSE == 1)
+                printf(CYAN "Performing crossover...\n" RESET);
             if (pcg32_random_r(&rng) / (double)UINT32_MAX <= c_rate)
             {
                 crossover(parent1, parent2, &rng);
             }
 
+            if (VERBOSE == 1)
+                printf(CYAN "Performing background mutation...\n" RESET);
             for (int j = 0; j < 2; ++j)
             {
                 if (pcg32_random_r(&rng) / (double)UINT32_MAX <= m_rate)
@@ -184,6 +189,8 @@ int emeans(void)
             }
 
             // Copy each parent to the new population
+            if (VERBOSE == 1)
+                printf(CYAN "Copying parents to new population...\n" RESET);
             gsl_matrix_memcpy(new_population[i], parent1);
             gsl_matrix_memcpy(new_population[i+1], parent2);
         }
@@ -200,28 +207,13 @@ int emeans(void)
         // Check if stop signal, terminate if present
         if (access("./stop", F_OK) != -1)
         {
-            printf(CYAN "Stop signal received, shutting down!\n" RESET);
+            printf(YELLOW "Stop signal received, shutting down!\n" RESET);
             remove("./stop");
             break;
         }
 
     }
-    printf(CYAN "Finished executing E-means, shutting down!\n" RESET);
-    
-    // Perform the first GA step, optimizing
-    //lloyd_random(trials, data, 3, clusters, &rng);
-    /*
-    lloyd_defined(trials, centroids, data, n_clusters, clusters);
-    dunn_index(centroids, n_clusters, clusters);
-
-    gsl_matrix *parent1 = gsl_matrix_alloc(n_clusters, data_cols),
-               *parent2 = gsl_matrix_alloc(n_clusters, data_cols);
-    random_centroids(parent1, bounds, &rng);
-    random_centroids(parent2, bounds, &rng);
-    crossover(parent1, parent2, &rng);
-    mutate(parent1, bounds, &rng);
-    mutate(parent2, bounds, &rng);
-    */
+    printf(GREEN "Finished executing E-means, shutting down!\n" RESET);
 
 free:
     for (int i = 0; i < (int)size; ++i)
