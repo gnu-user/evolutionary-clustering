@@ -52,8 +52,6 @@ int save_results(char *output, char *output2, char *output3, int size, double fi
     }
     max_fitness = new_fitness;
 
-    printf(GREEN "Saving results for new best fitness: %10.6f\n" RESET, max_fitness);
-
     // Append the solution to the results file
     if ((ofp = fopen(output, "a")) == NULL) 
     {
@@ -72,10 +70,12 @@ int save_results(char *output, char *output2, char *output3, int size, double fi
     }
 
     // Save the current optimal fitness
+    printf(GREEN "Saving results for new best fitness: %10.6f\n" RESET, max_fitness);
     fprintf(ofp, "%10.6f\n", max_fitness);
     fclose(ofp);
 
     // Save the optimal population centroids
+    printf(GREEN "Saving optimal population centroids\n" RESET);
     rows = population[max_idx]->size1;
     cols = population[max_idx]->size2;
     for (uint32_t i = 0; i < rows; ++i)
@@ -92,6 +92,7 @@ int save_results(char *output, char *output2, char *output3, int size, double fi
     fclose(ofp2);
 
     // Save the optimal clustering
+    printf(GREEN "Saving optimal clustering results\n" RESET);
     for (int n = 0; n < n_clusters; ++n)
     {
         // Skip empty clusters
@@ -100,6 +101,7 @@ int save_results(char *output, char *output2, char *output3, int size, double fi
 
         rows = clusters[max_idx][n]->size1;
         cols = clusters[max_idx][n]->size2;
+
         for (uint32_t i = 0; i < rows; ++i)
         {
             for (uint32_t j = 0; j < cols; ++j)
@@ -114,7 +116,6 @@ int save_results(char *output, char *output2, char *output3, int size, double fi
     }
     fclose(ofp3);
     
-    printf("MADE IT!");
     return SUCCESS;
 }
 

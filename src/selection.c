@@ -23,7 +23,7 @@ void gen_probability(int size, double fitness[size], double probability[size])
     double total = 0;
  
     if (VERBOSE == 1)
-        printf(GREEN "Generating probabilities for population\n" RESET);
+        printf(CYAN "Generating probabilities for population\n" RESET);
         
     // Update the total, including the weighting for negative values
     for (int i = 0; i < size; ++i)
