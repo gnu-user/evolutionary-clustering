@@ -1,13 +1,21 @@
 /*
- * Genetic Algorithm Optimization
+ * Evolutionary K-means clustering (E-means) using Genetic Algorithms.
  *
- * Contains functionality for the related selection methods executed
- * when deciding chromosomes to select for each new population.
- * 
- * Author: Jonathan Gillett
- *  
- * Copyright (C) 2015, Makeplain
+ * Copyright (C) 2015, Jonathan Gillett
  * All rights reserved.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,7 +31,7 @@ void gen_probability(int size, double fitness[size], double probability[size])
     double total = 0;
  
     if (VERBOSE == 1)
-        printf(CYAN "Generating probabilities for population\n" RESET);
+        printf(CYAN "Generating probabilities for population...\n" RESET);
         
     // Update the total, including the weighting for negative values
     for (int i = 0; i < size; ++i)

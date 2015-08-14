@@ -52,7 +52,7 @@ int save_results(char *output, char *output2, char *output3, int size, double fi
     }
     max_fitness = new_fitness;
 
-    // Append the solution to the results file
+    // Append the fitness to the file
     if ((ofp = fopen(output, "a")) == NULL) 
     {
         fprintf(stderr, RED "Can't open output file %s!\n" RESET, output);
@@ -69,7 +69,7 @@ int save_results(char *output, char *output2, char *output3, int size, double fi
         return ERROR;
     }
 
-    // Save the current optimal fitness
+    // Save the new best fitness
     printf(GREEN "Saving results for new best fitness: %10.6f\n" RESET, max_fitness);
     fprintf(ofp, "%10.6f\n", max_fitness);
     fclose(ofp);

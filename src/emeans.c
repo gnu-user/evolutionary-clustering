@@ -128,7 +128,7 @@ int emeans(void)
         random_centroids(population[i], bounds, &rng);
     }
 
-    // Perform the genetic algorithm
+    // Perform the Genetic Algorithm
     for (int iter = 0; iter < max_iter; ++iter)
     {
         // Compute the fitness of each chromosome
@@ -290,7 +290,6 @@ int main(int argc, char *argv[])
         printf(YELLOW "   CLUSTER FILE: %s\n" RESET, cluster_file);
         goto free;
     }
-
 
     // Execute the E-means algorithm
     status = emeans();

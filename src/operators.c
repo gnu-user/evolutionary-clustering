@@ -121,7 +121,6 @@ void mutate(gsl_matrix *chromosome, gsl_matrix *bounds, pcg32_random_t *rng)
     r = (ldexp(pcg32_random_r(rng), -32) * (max - min)) + min;
     gsl_matrix_set(chromosome, row, col, r);
 
-
     if (DEBUG == DEBUG_MUTATE)
     {
         printf(YELLOW "MUTATED CHROMSOME\n" RESET);

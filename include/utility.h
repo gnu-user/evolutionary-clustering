@@ -46,10 +46,7 @@ typedef enum
     DEBUG_DUNN          = 6,    /**< Debug the Dunn Index calculations */
     DEBUG_CROSSOVER     = 7,    /**< Debug the crossover operator */
     DEBUG_MUTATE        = 8,    /**< Debug the mutation operator */
-    DEBUG_PROBABILITY   = 9,    /**< Debug output for the probability generation */
-    DEBUG_SORTED        = 11,   /**< Debug the sorted chromosomes output */
-    DEBUG_SIMILARITY    = 12,   /**< Debug the chromosome similarity and mutation rate */
-    DEBUG_ELITES        = 13    /**< Debug the elites selected from the population */
+    DEBUG_PROBABILITY   = 9    /**< Debug output for the probability generation */
 } debug_code;
 
 /**
@@ -62,30 +59,5 @@ typedef enum
     ERROR           = 1     /**< Generic error code */
 } error_code;
 
-/**
- * @struct chromval
- *
- * Struct containing the sum of values for each chromosome in the
- * population as a string to simplify sorting.
- */
-typedef struct
-{
-    char* val;      /**< String representation of a chromosome */
-    int idx;        /**< Index of the chromosome in the population */
-} chromval;
-
-
-/**
- * Sorts the chromosome by calculating a string representation of the
- * numeric value of each entry in the chromosome. The resultant sorted
- * population and the string representation of each chromosome are set in
- * the sorted parameter.
- *
- * @param size       The size of the population 
- * @param len        The length of each chromosome
- * @param population The population of chromsomes
- * @param sorted     The sorted string representation of each chromosome
- */
-extern void sort_chrom(int size, int len, int population[size][len], chromval *sorted);
 
 #endif /* UTILITY_H_ */
