@@ -88,13 +88,13 @@ int lloyd_random(int trials, gsl_matrix *data, int n_clusters,
                     {
                         min_norm = norm;
                         k = n;
-                        gsl_matrix_set(clust_stats, trial, i, k);
                     }
                 }
+                gsl_matrix_set(clust_stats, trial, i, k);
                 counts[k] += 1;
             }
 
-            // Assign the data to the cluster with the minimum norm
+            // Allocate the clusters
             for (int n = 0; n < n_clusters; ++n)
             {
                 if (counts[n] < 1)
@@ -109,15 +109,10 @@ int lloyd_random(int trials, gsl_matrix *data, int n_clusters,
             }
             memset(counts, 0, n_clusters * sizeof(int));
 
+            // Assign the data to the cluster
             for (uint32_t i = 0, k = 0; i < rows; ++i)
             {
                 k = gsl_matrix_get(clust_stats, trial, i);
-
-                // Skip clusters that are empty
-                if (clusters[k] == NULL)
-                {
-                    continue;
-                }
                 gsl_vector_view data_row = gsl_matrix_row(data, i);
                 gsl_vector_view clust_row = gsl_matrix_row(clusters[k], counts[k]);
                 gsl_vector_memcpy(&clust_row.vector, &data_row.vector);
@@ -238,13 +233,13 @@ int lloyd_defined(int trials, gsl_matrix *centroids, gsl_matrix *data,
                 {
                     min_norm = norm;
                     k = n;
-                    gsl_matrix_set(clust_stats, 0, i, k);
                 }
             }
+            gsl_matrix_set(clust_stats, 0, i, k);
             counts[k] += 1;
         }
 
-        // Assign the data to the cluster with the minimum norm
+        // Allocate the clusters
         for (int n = 0; n < n_clusters; ++n)
         {
             if (counts[n] < 1)
@@ -259,15 +254,10 @@ int lloyd_defined(int trials, gsl_matrix *centroids, gsl_matrix *data,
         }
         memset(counts, 0, n_clusters * sizeof(int));
 
+        // Assign the data to the cluster
         for (uint32_t i = 0, k = 0; i < rows; ++i)
         {
             k = gsl_matrix_get(clust_stats, 0, i);
-
-            // Skip clusters that are empty
-            if (clusters[k] == NULL)
-            {
-                continue;
-            }
             gsl_vector_view data_row = gsl_matrix_row(data, i);
             gsl_vector_view clust_row = gsl_matrix_row(clusters[k], counts[k]);
             gsl_vector_memcpy(&clust_row.vector, &data_row.vector);
@@ -310,7 +300,6 @@ int lloyd_defined(int trials, gsl_matrix *centroids, gsl_matrix *data,
     }
     gsl_vector_free(sub);
 
-    printf("SURVIVED!\n");
     return SUCCESS;
 }
 
