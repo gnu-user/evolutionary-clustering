@@ -36,11 +36,14 @@ void crossover(gsl_matrix *parent1, gsl_matrix *parent2, pcg32_random_t *rng)
     uint32_t rows = parent1->size1,
              cols = parent1->size2;
     uint32_t cut = (uint32_t)pcg32_boundedrand_r(rng, rows-1) + 1;
+    bool left = (bool)pcg32_boundedrand_r(rng, 2);
+    gsl_matrix *temp = gsl_matrix_alloc(1, cols);
 
     if (DEBUG == DEBUG_CROSSOVER)
     {
         printf(YELLOW "CROSSOVER CENTROIDS BEFORE\n" RESET);
         printf(YELLOW "CHROMSOME CUT POINT: %d\n", cut);
+        printf(YELLOW "CROSSOVER SIDE: %s\n", left ? "left" : "right");
         printf(YELLOW "PARENT[1]:\n" RESET);
         for (uint32_t i = 0; i < rows; ++i)
         {
@@ -61,26 +64,38 @@ void crossover(gsl_matrix *parent1, gsl_matrix *parent2, pcg32_random_t *rng)
         }
     }
 
-    // Copy bottom half from parent1 to parent2
-    for (uint32_t i = 0; i < cut; ++i)
+    if (left)
     {
-        gsl_vector_view parent1_row = gsl_matrix_row(parent1, i);
-        gsl_vector_view parent2_row = gsl_matrix_row(parent2, i);
-        gsl_vector_memcpy(&parent2_row.vector, &parent1_row.vector);
+        // Swap left half of chromosome
+        for (uint32_t i = 0; i < cut; ++i)
+        {
+            gsl_vector_view parent1_row = gsl_matrix_row(parent1, i);
+            gsl_vector_view parent2_row = gsl_matrix_row(parent2, i);
+            gsl_vector_view temp_row = gsl_matrix_row(temp, 0);
+            gsl_vector_memcpy(&temp_row.vector, &parent2_row.vector);
+            gsl_vector_memcpy(&parent2_row.vector, &parent1_row.vector);
+            gsl_vector_memcpy(&parent1_row.vector, &temp_row.vector);
+        }
     }
-
-    // Copy top half from parent2 to parent1
-    for (uint32_t i = cut; i < rows; ++i)
+    else
     {
-        gsl_vector_view parent1_row = gsl_matrix_row(parent1, i);
-        gsl_vector_view parent2_row = gsl_matrix_row(parent2, i);
-        gsl_vector_memcpy(&parent1_row.vector, &parent2_row.vector);
+        // Swap the right half of chromosome
+        for (uint32_t i = cut; i < rows; ++i)
+        {
+            gsl_vector_view parent1_row = gsl_matrix_row(parent1, i);
+            gsl_vector_view parent2_row = gsl_matrix_row(parent2, i);
+            gsl_vector_view temp_row = gsl_matrix_row(temp, 0);
+            gsl_vector_memcpy(&temp_row.vector, &parent2_row.vector);
+            gsl_vector_memcpy(&parent2_row.vector, &parent1_row.vector);
+            gsl_vector_memcpy(&parent1_row.vector, &temp_row.vector);
+        }
     }
 
     if (DEBUG == DEBUG_CROSSOVER)
     {
         printf(YELLOW "CROSSOVER CENTROIDS AFTER\n" RESET);
         printf(YELLOW "CHROMSOME CUT POINT: %d\n", cut);
+        printf(YELLOW "CROSSOVER SIDE: %s\n", left ? "left" : "right");
         printf(YELLOW "PARENT[1]:\n" RESET);
         for (uint32_t i = 0; i < rows; ++i)
         {
@@ -100,6 +115,8 @@ void crossover(gsl_matrix *parent1, gsl_matrix *parent2, pcg32_random_t *rng)
             printf("\n");
         }
     }
+
+    gsl_matrix_free(temp);
 }
 
 
